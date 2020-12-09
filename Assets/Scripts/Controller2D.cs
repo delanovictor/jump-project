@@ -7,10 +7,12 @@ public class Controller2D : MonoBehaviour {
 	const float skinWidth = .015f;
 	public int horizontalRayCount = 4;
 	public int verticalRayCount = 4;
+	public float maxClimbingAngle = 80;
 	public LayerMask collisionMask;
 	float horizontalRaySpacing;
 	float verticalRaySpacing;
 	public CollisionInfo collisions;
+	public bool onAir;
 
 	BoxCollider2D bc2d;
 	RaycastOrigins raycastOrigins;
@@ -26,6 +28,7 @@ public class Controller2D : MonoBehaviour {
 		if(velocity.y != 0){
 			VerticalCollisions(ref velocity);
 		}
+		onAir = !(collisions.bellow && collisions.above && collisions.bellow && collisions.above);
 		transform.Translate(velocity);
 	}
 	
@@ -82,6 +85,9 @@ public class Controller2D : MonoBehaviour {
 
 
 			if(hit){
+				// float angle = Vector2.Angle(hit.normal, Vector2.up);
+				// print("Angulo da Colisão na Vertical: " + angle);
+				
 				velocity.y = (hit.distance - skinWidth) * directionY;
 				rayLenght = hit.distance;
 
@@ -100,6 +106,10 @@ public class Controller2D : MonoBehaviour {
 			RaycastHit2D hit = Physics2D.Raycast(rayOrigin, Vector2.right * directionX, rayLenght, collisionMask);
 			Debug.DrawRay(rayOrigin, Vector2.right * directionX * rayLenght ,Color.red);
 			if(hit){
+				float angle = Vector2.Angle(hit.normal, Vector2.up);
+				print("Angulo da Colisão na Horizontal: " + angle);
+				print(hit.collider.tag);
+				
 				velocity.x = (hit.distance - skinWidth) * directionX;
 				rayLenght = hit.distance;
 
@@ -108,13 +118,13 @@ public class Controller2D : MonoBehaviour {
 			}
 		}
 	}
-// --------------------------------------------------
-		public struct CollisionInfo{
-		public bool above, bellow, left, right;
 
+// --------------------------------------------------
+	public struct CollisionInfo{
+		public bool above, bellow, left, right;
 		public void Reset(){
 			above = bellow = false;
 			right = left = false;
 		}
-	}
+	}	
 }
