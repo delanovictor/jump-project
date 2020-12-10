@@ -107,9 +107,7 @@ public class Controller2D : MonoBehaviour {
 			Debug.DrawRay(rayOrigin, Vector2.right * directionX * rayLenght ,Color.red);
 			if(hit){
 				float angle = Vector2.Angle(hit.normal, Vector2.up);
-				print("Angulo da Colisão na Horizontal: " + angle);
-				print(hit.collider.tag);
-				
+		
 				velocity.x = (hit.distance - skinWidth) * directionX;
 				rayLenght = hit.distance;
 
