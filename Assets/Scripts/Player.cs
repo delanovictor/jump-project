@@ -8,6 +8,7 @@ public class Player : MonoBehaviour {
     public float jumpHeight = 4f;
     public float timeToJumpPeak = .5f;
     public float moveSpeed = 10f;
+    private float bounceParam = 1f;
     [Range(-90f,90f)]
     public float jumpAngle = 0;
     public float jumpDistance = 6f;
@@ -37,7 +38,6 @@ public class Player : MonoBehaviour {
         //calculo da gravidade e altura do pulo apartir da altura e duração do pulo
         // gravity = (-2 * jumpHeight)/(timeToJumpPeak * timeToJumpPeak);
         // jumpVelocity = 2 * jumpHeight / timeToJumpPeak;
-
         gravity = -20f;
 	}
 
@@ -47,43 +47,49 @@ public class Player : MonoBehaviour {
         velocity.y += gravity * Time.fixedDeltaTime;
 
         // -----------------------------------------------------------------
+        CheckCollisions(input);
+        // -------------------------------------------------------------------
+        CheckSpaceInput();
+        // -----------------------------------------------------------------
+        CheckStates(input);
+    }
 
+    void CheckCollisions(Vector2 input){
         if(controller.collisions.bellow){
-            input = new Vector2(Input.GetAxisRaw("Horizontal"),Input.GetAxisRaw("Vertical"));
-            velocity.y = -velocity.y/4;
-            gravity = -20f;
-            jumpDistance = 6f;
-            // jumpHeight = 4;
-            if(playerState == State.Jumping || playerState == State.Falling){
-                playerState = State.Running;
+            if(!(playerState == State.Jumping)){
+                input = new Vector2(Input.GetAxisRaw("Horizontal"),Input.GetAxisRaw("Vertical"));
+                velocity.y = -velocity.y/4;
+                gravity = -20f;
+                jumpDistance = 6f;
+                // jumpHeight = 4;
+                if(playerState == State.Jumping || playerState == State.Falling){
+                    playerState = State.Running;
+                }
+            }else{
+                velocity.y = -velocity.y * bounceParam;
+                jumpDistance -= Vector3.Distance(transform.position, lastPosition);
+                lastPosition = transform.position;
             }
         }else{
             if(playerState != State.Jumping){
-                if(velocity.y < -1){
+                if(velocity.y < -.1){
                     playerState = State.Falling;
                 }
             }
         }
-
         if(controller.collisions.above){
-            velocity.y = -velocity.y;
+            velocity.y = -velocity.y * bounceParam;
             jumpDistance -= Vector3.Distance(transform.position, lastPosition);
             lastPosition = transform.position;
-            print("hit above, DISTANCE TO GO : " + jumpDistance);
-            
         }
-
         if((controller.collisions.right || controller.collisions.left) && playerState == State.Jumping){
-            velocity.x = -velocity.x * 1f;
+            velocity.x = -velocity.x * bounceParam;
             jumpDistance -= Vector3.Distance(transform.position, lastPosition);
             lastPosition = transform.position;
-            print("hit the sides, DISTANCE TO GO : " + jumpDistance);
-            
         }
-
-        // -------------------------------------------------------------------
-
-          //Se o botão de espaço for soltado AND estiver em contato com o solo
+    }
+    void CheckSpaceInput(){
+        //Se o botão de espaço for soltado AND estiver em contato com o solo
         if(Input.GetKeyUp(KeyCode.Space) && controller.collisions.bellow){
             //Pula para direção do direcional
             playerState = State.Jumping;
@@ -93,8 +99,6 @@ public class Player : MonoBehaviour {
             velocity.x = (Mathf.Sin(jumpAngle * Mathf.Deg2Rad) * jumpDistance)/timeToJumpPeak;
 
             lastPosition = transform.position;
-            print("first jump, DISTANCE TO GO : "+ jumpDistance);
-            //print(lastPosition);
         }
 
          //Se space foi apertado AND o player está no chão
@@ -111,9 +115,8 @@ public class Player : MonoBehaviour {
         }else{
             jumpAngle = 0f;
         }
-
-        // -----------------------------------------------------------------
-
+    }
+    void CheckStates(Vector2 input){
         Vector2 oldVelocity = velocity;
         //O jogador não pode se movimentar durante o pulo, porém se ele estiver no ar por outra razão
         // que não seja o pulo, então pode se movimentar.
@@ -142,17 +145,18 @@ public class Player : MonoBehaviour {
             gravity = 0;
 
             if(Vector3.Distance(transform.position, lastPosition) >= jumpDistance && gravity == 0){
-                print("DISTANCE MADE " + jumpDistance );
-                gravity = -20f;
-                velocity.y = 0;
+                
+                gravity = -15f;
+                velocity.y = velocity.y / 4;
+                velocity.x = velocity.x / 3;
                 playerState = State.Falling;
             }
             //Se colidir com algo horizontalmente, inverte a velocidade em X e multiplica por um fator
             //Esse fator será variado conforme o tipo de obstáculo, e será detectado dinâmicamente.
         }
-        
-        
     }
+
+
     //Desenha a trajetória, precisa de melhoras.
     void DrawPath(){
         Vector2 drawPoint = new Vector2(transform.position.x + Mathf.Sin(jumpAngle * Mathf.Deg2Rad) * jumpDistance, transform.position.y + Mathf.Cos(jumpAngle * Mathf.Deg2Rad) * jumpDistance);
