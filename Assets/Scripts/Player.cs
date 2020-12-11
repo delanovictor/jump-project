@@ -52,6 +52,7 @@ public class Player : MonoBehaviour {
             input = new Vector2(Input.GetAxisRaw("Horizontal"),Input.GetAxisRaw("Vertical"));
             velocity.y = -velocity.y/4;
             gravity = -20f;
+            jumpDistance = 6f;
             // jumpHeight = 4;
             if(playerState == State.Jumping || playerState == State.Falling){
                 playerState = State.Running;
@@ -66,10 +67,18 @@ public class Player : MonoBehaviour {
 
         if(controller.collisions.above){
             velocity.y = -velocity.y;
+            jumpDistance -= Vector3.Distance(transform.position, lastPosition);
+            lastPosition = transform.position;
+            print("hit above, DISTANCE TO GO : " + jumpDistance);
+            
         }
 
-        if(controller.collisions.right || controller.collisions.left){
-            velocity.x = -velocity.x * 0.5f;
+        if((controller.collisions.right || controller.collisions.left) && playerState == State.Jumping){
+            velocity.x = -velocity.x * 1f;
+            jumpDistance -= Vector3.Distance(transform.position, lastPosition);
+            lastPosition = transform.position;
+            print("hit the sides, DISTANCE TO GO : " + jumpDistance);
+            
         }
 
         // -------------------------------------------------------------------
@@ -84,7 +93,8 @@ public class Player : MonoBehaviour {
             velocity.x = (Mathf.Sin(jumpAngle * Mathf.Deg2Rad) * jumpDistance)/timeToJumpPeak;
 
             lastPosition = transform.position;
-            print(lastPosition);
+            print("first jump, DISTANCE TO GO : "+ jumpDistance);
+            //print(lastPosition);
         }
 
          //Se space foi apertado AND o player está no chão
@@ -98,6 +108,8 @@ public class Player : MonoBehaviour {
             playerState = State.Aiming;
            
             DrawPath();
+        }else{
+            jumpAngle = 0f;
         }
 
         // -----------------------------------------------------------------
@@ -128,8 +140,9 @@ public class Player : MonoBehaviour {
             controller.Move(deltaPos);
 
             gravity = 0;
-            if(Vector3.Distance(transform.position, lastPosition) > jumpDistance && gravity == 0){
-                print("DISTANCIA");
+
+            if(Vector3.Distance(transform.position, lastPosition) >= jumpDistance && gravity == 0){
+                print("DISTANCE MADE " + jumpDistance );
                 gravity = -20f;
                 velocity.y = 0;
                 playerState = State.Falling;
@@ -143,10 +156,10 @@ public class Player : MonoBehaviour {
     //Desenha a trajetória, precisa de melhoras.
     void DrawPath(){
         Vector2 drawPoint = new Vector2(transform.position.x + Mathf.Sin(jumpAngle * Mathf.Deg2Rad) * jumpDistance, transform.position.y + Mathf.Cos(jumpAngle * Mathf.Deg2Rad) * jumpDistance);
-        print("--------");
-        print(jumpAngle);
-        print(Mathf.Sin(jumpAngle * Mathf.Deg2Rad));
-        print(Mathf.Cos(jumpAngle * Mathf.Deg2Rad));
+        // print("--------");
+        // print(jumpAngle);
+        // print(Mathf.Sin(jumpAngle * Mathf.Deg2Rad));
+        // print(Mathf.Cos(jumpAngle * Mathf.Deg2Rad));
 
         Debug.DrawLine(transform.position,  drawPoint, Color.green);  
     }
