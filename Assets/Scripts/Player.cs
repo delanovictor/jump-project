@@ -2,25 +2,31 @@
 using System.Collections;
 
 [RequireComponent (typeof (Controller2D))]
+[RequireComponent (typeof (Trajectory))]
+
 public class Player : MonoBehaviour {
 
+    public bool toggleAim;
+    public float timeStep = 200;
     //Esses três parâmetros determinam todos os outros
-    public float jumpHeight = 4f;
     public float timeToJumpPeak = .5f;
     public float moveSpeed = 10f;
+    private float bounceParam = 1f;
     [Range(-90f,90f)]
     public float jumpAngle = 0;
-    public float jumpDistance = 6f;
+    public float jumpDistance = 4f;
     //Esses caras derivam dos de cima. 
+    public float jumpGravity = 0;
+    public float standartGravity = -20f;
     public float gravity;
-    public float jumpVelocity;
+    float jumpVelocity;
+    const float jumpVelocityConst = 7f;
     public Vector3 lastPosition;
-
+    
     Vector2 velocity;
-
-    bool jumping;
     float lastInput;
 	Controller2D controller;
+    Trajectory trajectory;
 
     public enum State{
         Running,
@@ -29,66 +35,93 @@ public class Player : MonoBehaviour {
         Falling
     }
 
-    State playerState;
+    State playerState = State.Falling;
 
 	void Start() {
         //Instancia classe controller
 		controller = GetComponent<Controller2D> ();
+        trajectory = GetComponent<Trajectory>();
         //calculo da gravidade e altura do pulo apartir da altura e duração do pulo
         // gravity = (-2 * jumpHeight)/(timeToJumpPeak * timeToJumpPeak);
         // jumpVelocity = 2 * jumpHeight / timeToJumpPeak;
-
-        gravity = -20f;
+        gravity = standartGravity;
 	}
+
+    private void Update() {
+        
+        CheckJump();
+        CheckCollisions();
+
+        // print(playerState);
+    }
 
     private void FixedUpdate() {
         
-        Vector2 input = new Vector2();
         velocity.y += gravity * Time.fixedDeltaTime;
+        CheckStates();
+        CheckJumpAngle();
 
-        // -----------------------------------------------------------------
 
+    }
+
+    void CheckCollisions(){
+        Vector2 input = new Vector2();
         if(controller.collisions.bellow){
-            input = new Vector2(Input.GetAxisRaw("Horizontal"),Input.GetAxisRaw("Vertical"));
-            velocity.y = -velocity.y/4;
-            gravity = -20f;
-            // jumpHeight = 4;
-            if(playerState == State.Jumping || playerState == State.Falling){
-                playerState = State.Running;
+            if(!(playerState == State.Jumping)){
+                input = new Vector2(Input.GetAxisRaw("Horizontal"),Input.GetAxisRaw("Vertical"));
+                velocity.y = -velocity.y/100;
+                gravity = standartGravity;
+                jumpDistance = 4f;
+                // jumpHeight = 4;
+                if(playerState == State.Falling){
+                    playerState = State.Running;
+                }
+            }else{
+                velocity.y = -velocity.y * bounceParam;
+                jumpDistance -= Vector3.Distance(transform.position, lastPosition);
+                lastPosition = transform.position;
+                jumpAngle = 0;
             }
         }else{
             if(playerState != State.Jumping){
-                if(velocity.y < -1){
+                if(velocity.y < -.1){
                     playerState = State.Falling;
                 }
             }
         }
-
         if(controller.collisions.above){
-            velocity.y = -velocity.y;
+            velocity.y = -velocity.y * bounceParam;
+            jumpDistance -= Vector3.Distance(transform.position, lastPosition);
+            lastPosition = transform.position;
         }
-
-        if(controller.collisions.right || controller.collisions.left){
-            velocity.x = -velocity.x * 0.5f;
+        if((controller.collisions.right || controller.collisions.left)){
+            velocity.x = -velocity.x * bounceParam;
+            jumpDistance -= Vector3.Distance(transform.position, lastPosition);
+            lastPosition = transform.position;
         }
+    }
 
-        // -------------------------------------------------------------------
-
-          //Se o botão de espaço for soltado AND estiver em contato com o solo
-        if(Input.GetKeyUp(KeyCode.Space) && controller.collisions.bellow){
+    void CheckJump(){
+    
+       if(Input.GetKeyUp(KeyCode.Space) && controller.collisions.bellow){
             //Pula para direção do direcional
             playerState = State.Jumping;
 
             jumpVelocity = (Mathf.Cos(jumpAngle * Mathf.Deg2Rad) * jumpDistance)/timeToJumpPeak;
             velocity.y = jumpVelocity;
+            jumpVelocity = jumpVelocityConst; 
             velocity.x = (Mathf.Sin(jumpAngle * Mathf.Deg2Rad) * jumpDistance)/timeToJumpPeak;
 
             lastPosition = transform.position;
-            print(lastPosition);
         }
+    }
+   
+
+    void CheckJumpAngle(){
+        //Se o botão de espaço for soltado AND estiver em contato com o solo
 
          //Se space foi apertado AND o player está no chão
-        if(Input.GetKey(KeyCode.Space) && controller.collisions.bellow){
+        if((Input.GetKey(KeyCode.Space) && controller.collisions.bellow) || toggleAim){
             //Desenha a trajetória e não se move.
             if(Input.GetKey(KeyCode.D)){
                 jumpAngle = jumpAngle + (55 * Time.fixedDeltaTime);
@@ -96,11 +129,16 @@ public class Player : MonoBehaviour {
                 jumpAngle = jumpAngle - (55 * Time.fixedDeltaTime);
             }
             playerState = State.Aiming;
-           
-            DrawPath();
+            
+            trajectory.PhysicsData(jumpGravity, standartGravity, timeToJumpPeak);
+            trajectory.Draw(jumpAngle, jumpDistance);
+        }else{
+            // jumpAngle = 0f;
         }
+    }
 
-        // -----------------------------------------------------------------
+    void CheckStates(){
+        Vector2 input = new Vector2();
 
         Vector2 oldVelocity = velocity;
         //O jogador não pode se movimentar durante o pulo, porém se ele estiver no ar por outra razão
@@ -117,6 +155,7 @@ public class Player : MonoBehaviour {
             controller.Move(deltaPos);
         }
         if(playerState == State.Falling){
+            // velocity.x = input.x * moveSpeed;
             Vector2 deltaPos = (oldVelocity + velocity) * 0.5f * Time.fixedDeltaTime;
             controller.Move(deltaPos);
         }
@@ -127,30 +166,38 @@ public class Player : MonoBehaviour {
             Vector2 deltaPos = (oldVelocity + velocity) * 0.5f * Time.fixedDeltaTime;
             controller.Move(deltaPos);
 
-            gravity = 0;
-            if(Vector3.Distance(transform.position, lastPosition) > jumpDistance && gravity == 0){
-                print("DISTANCIA");
-                gravity = -20f;
-                velocity.y = 0;
+            gravity = jumpGravity;
+
+            if(Vector3.Distance(transform.position, lastPosition) >= jumpDistance){
+                gravity = standartGravity;
+                velocity.y = velocity.y / 2;
+                // velocity.x = velocity.x / 4;
                 playerState = State.Falling;
             }
             //Se colidir com algo horizontalmente, inverte a velocidade em X e multiplica por um fator
             //Esse fator será variado conforme o tipo de obstáculo, e será detectado dinâmicamente.
         }
-        
-        
     }
+
+
     //Desenha a trajetória, precisa de melhoras.
-    void DrawPath(){
-        Vector2 drawPoint = new Vector2(transform.position.x + Mathf.Sin(jumpAngle * Mathf.Deg2Rad) * jumpDistance, transform.position.y + Mathf.Cos(jumpAngle * Mathf.Deg2Rad) * jumpDistance);
-        print("--------");
-        print(jumpAngle);
-        print(Mathf.Sin(jumpAngle * Mathf.Deg2Rad));
-        print(Mathf.Cos(jumpAngle * Mathf.Deg2Rad));
+    // void DrawPath(){
+        //acho que esse draw point ta errado Delano :D n sei como arrumar mb
+     
+        // print("--------");
+        // print(jumpAngle);
+        // print(Mathf.Sin(jumpAngle * Mathf.Deg2Rad));
+        // print(Mathf.Cos(jumpAngle * Mathf.Deg2Rad));
 
-        Debug.DrawLine(transform.position,  drawPoint, Color.green);  
-    }
+         
+    // }
 
+    void DrawPath() {
+	
+        // Vector2 drawPoint2 = new Vector2(transform.position.x + Mathf.Sin(jumpAngle * Mathf.Deg2Rad) * jumpDistance, transform.position.y + Mathf.Cos(jumpAngle * Mathf.Deg2Rad) * jumpDistance);
+        // Debug.DrawLine(transform.position,  drawPoint2, Color.blue); 
+	}
+   
     // sin(60) = o/h
     // sin(60)*h = o
     // cos(60)*h = a  

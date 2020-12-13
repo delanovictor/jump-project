@@ -29,6 +29,7 @@ public class Controller2D : MonoBehaviour {
 			VerticalCollisions(ref velocity);
 		}
 		onAir = !(collisions.bellow && collisions.above && collisions.bellow && collisions.above);
+		
 		transform.Translate(velocity);
 	}
 	
