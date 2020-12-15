@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Trajectory : MonoBehaviour
 {
-    public float step = 200;
+    public float step = 50;
     public List<Vector3> DrawPoints = new List<Vector3>();
     // float jumpAngle;
     // float jumpDistance;
@@ -62,26 +62,26 @@ public class Trajectory : MonoBehaviour
             i++;
 		}
 
-        float fy = (initialVelocity.y * simulationTime + (jumpGravity * simulationTime * simulationTime / 2f));
-        float gy = (initialVelocity.y * simulationTime + (standartGravity * simulationTime * simulationTime / 2f));
-        float initialHeight = Mathf.Abs(fy - gy);
+        // float fy = (initialVelocity.y * simulationTime + (jumpGravity * simulationTime * simulationTime / 2f));
+        // float gy = (initialVelocity.y * simulationTime + (standartGravity * simulationTime * simulationTime / 2f));
+        // float initialHeight = Mathf.Abs(fy - gy);
 
-        startTime = simulationTime;
-        simulationTime = 0;
+        // startTime = simulationTime;
+        // simulationTime = 0;
 
-        for (i = 1; i <= step; i++) {
-			simulationTime = i / step;
-            simulationTime += startTime;
-            Vector3 displacement = new Vector3();
+        // for (i = 1; i <= step; i++) {
+		// 	simulationTime = i / step;
+        //     simulationTime += startTime;
+        //     Vector3 displacement = new Vector3();
 
-            displacement.x = initialVelocity.x * simulationTime;
-            displacement.y = initialVelocity.y * simulationTime + (standartGravity * simulationTime * simulationTime / 2f) + initialHeight;
-			drawPoint = transform.position + displacement;
-            DrawPoints.Add(drawPoint);
-			// Debug.DrawLine (previousDrawPoint, drawPoint, Color.green);
-			previousDrawPoint = drawPoint;
+        //     displacement.x = initialVelocity.x * simulationTime;
+        //     displacement.y = initialVelocity.y * simulationTime + (standartGravity * simulationTime * simulationTime / 2f) + initialHeight;
+		// 	drawPoint = transform.position + displacement;
+        //     DrawPoints.Add(drawPoint);
+		// 	// Debug.DrawLine (previousDrawPoint, drawPoint, Color.green);
+		// 	previousDrawPoint = drawPoint;
 	
-    	}
+    	// }
     }
 
     private void OnDrawGizmos() {

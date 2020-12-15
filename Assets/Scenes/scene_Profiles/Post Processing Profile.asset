@@ -1347,9 +1347,9 @@ MonoBehaviour:
     value: 1
   intensity:
     overrideState: 1
-    value: 17.51
+    value: 30.8
   threshold:
-    overrideState: 1
+    overrideState: 0
     value: 1
   softKnee:
     overrideState: 1
@@ -1367,7 +1367,7 @@ MonoBehaviour:
     overrideState: 1
     value: {r: 1, g: 1, b: 1, a: 1}
   fastMode:
-    overrideState: 1
+    overrideState: 0
     value: 0
   dirtTexture:
     overrideState: 0
@@ -1423,10 +1423,10 @@ MonoBehaviour:
     value: 10
   aperture:
     overrideState: 1
-    value: 1.7
+    value: 17.1
   focalLength:
     overrideState: 1
-    value: 48
+    value: 95
   kernelSize:
     overrideState: 0
     value: 1
@@ -1442,16 +1442,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9b77c5407dc277943b591ade9e6b18c5, type: 3}
   m_Name: LensDistortion
   m_EditorClassIdentifier: 
-  active: 1
+  active: 0
   enabled:
     overrideState: 1
     value: 1
   intensity:
     overrideState: 1
-    value: 53
+    value: -12
   intensityX:
     overrideState: 1
-    value: 1
+    value: 0.54
   intensityY:
     overrideState: 0
     value: 1

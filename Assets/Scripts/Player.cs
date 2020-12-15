@@ -6,21 +6,20 @@ using System.Collections;
 
 public class Player : MonoBehaviour {
 
+    public SpriteRenderer spriteRenderer;
+    public Animator animator;
     public bool toggleAim;
-    public float timeStep = 200;
     //Esses três parâmetros determinam todos os outros
     public float timeToJumpPeak = .5f;
     public float moveSpeed = 10f;
     private float bounceParam = 1f;
     [Range(-90f,90f)]
     public float jumpAngle = 0;
-    public float jumpDistance = 4f;
+    public float jumpDistance = 5f;
     //Esses caras derivam dos de cima. 
     public float jumpGravity = 0;
     public float standartGravity = -20f;
     public float gravity;
-    float jumpVelocity;
-    const float jumpVelocityConst = 7f;
     public Vector3 lastPosition;
     
     Vector2 velocity;
@@ -32,10 +31,11 @@ public class Player : MonoBehaviour {
         Running,
         Aiming,
         Jumping,
-        Falling
+        Falling,
+        Idle
     }
 
-    State playerState = State.Falling;
+    State playerState = State.Idle;
 
 	void Start() {
         //Instancia classe controller
@@ -60,8 +60,6 @@ public class Player : MonoBehaviour {
         velocity.y += gravity * Time.fixedDeltaTime;
         CheckStates();
         CheckJumpAngle();
-
-
     }
 
     void CheckCollisions(){
@@ -69,14 +67,16 @@ public class Player : MonoBehaviour {
         if(controller.collisions.bellow){
             if(!(playerState == State.Jumping)){
                 input = new Vector2(Input.GetAxisRaw("Horizontal"),Input.GetAxisRaw("Vertical"));
+               
                 velocity.y = -velocity.y/100;
                 gravity = standartGravity;
-                jumpDistance = 4f;
+                jumpDistance = 5f;
                 // jumpHeight = 4;
                 if(playerState == State.Falling){
                     playerState = State.Running;
                 }
             }else{
+               
                 velocity.y = -velocity.y * bounceParam;
                 jumpDistance -= Vector3.Distance(transform.position, lastPosition);
                 lastPosition = transform.position;
@@ -107,9 +107,9 @@ public class Player : MonoBehaviour {
             //Pula para direção do direcional
             playerState = State.Jumping;
 
-            jumpVelocity = (Mathf.Cos(jumpAngle * Mathf.Deg2Rad) * jumpDistance)/timeToJumpPeak;
-            velocity.y = jumpVelocity;
-            jumpVelocity = jumpVelocityConst; 
+            velocity.y = (Mathf.Cos(jumpAngle * Mathf.Deg2Rad) * jumpDistance)/timeToJumpPeak;
+            // velocity.y = jumpVelocity;
+            // jumpVelocity = jumpVelocityConst; 
             velocity.x = (Mathf.Sin(jumpAngle * Mathf.Deg2Rad) * jumpDistance)/timeToJumpPeak;
 
             lastPosition = transform.position;
@@ -124,16 +124,16 @@ public class Player : MonoBehaviour {
         if((Input.GetKey(KeyCode.Space) && controller.collisions.bellow) || toggleAim){
             //Desenha a trajetória e não se move.
             if(Input.GetKey(KeyCode.D)){
-                jumpAngle = jumpAngle + (55 * Time.fixedDeltaTime);
+                jumpAngle = jumpAngle + (70 * Time.fixedDeltaTime);
             }else if(Input.GetKey(KeyCode.A)){
-                jumpAngle = jumpAngle - (55 * Time.fixedDeltaTime);
+                jumpAngle = jumpAngle - (70 * Time.fixedDeltaTime);
             }
             playerState = State.Aiming;
             
             trajectory.PhysicsData(jumpGravity, standartGravity, timeToJumpPeak);
             trajectory.Draw(jumpAngle, jumpDistance);
         }else{
-            // jumpAngle = 0f;
+            trajectory.DrawPoints.Clear();
         }
     }
 
@@ -153,11 +153,19 @@ public class Player : MonoBehaviour {
             velocity.x = input.x * moveSpeed;
             Vector2 deltaPos = (oldVelocity + velocity) * 0.5f * Time.fixedDeltaTime;
             controller.Move(deltaPos);
+            animator.SetFloat("isRunning", Mathf.Abs(velocity.x));
+            if (input.x < 0){
+                spriteRenderer.flipX = true;
+            }
+            if(input.x > 0){
+                spriteRenderer.flipX = false;
+            }
         }
         if(playerState == State.Falling){
-            // velocity.x = input.x * moveSpeed;
+             velocity.x = input.x * moveSpeed;
             Vector2 deltaPos = (oldVelocity + velocity) * 0.5f * Time.fixedDeltaTime;
             controller.Move(deltaPos);
+            
         }
 
         //Se estiver pulando
@@ -170,8 +178,8 @@ public class Player : MonoBehaviour {
 
             if(Vector3.Distance(transform.position, lastPosition) >= jumpDistance){
                 gravity = standartGravity;
-                velocity.y = velocity.y / 2;
-                // velocity.x = velocity.x / 4;
+                velocity.y = velocity.y / 3;
+                velocity.x = velocity.x / 5;
                 playerState = State.Falling;
             }
             //Se colidir com algo horizontalmente, inverte a velocidade em X e multiplica por um fator
@@ -192,7 +200,7 @@ public class Player : MonoBehaviour {
          
     // }
 
-    void DrawPath() {
+    //void DrawPath() {
 	
         // Vector2 drawPoint2 = new Vector2(transform.position.x + Mathf.Sin(jumpAngle * Mathf.Deg2Rad) * jumpDistance, transform.position.y + Mathf.Cos(jumpAngle * Mathf.Deg2Rad) * jumpDistance);
         // Debug.DrawLine(transform.position,  drawPoint2, Color.blue); 
@@ -201,4 +209,3 @@ public class Player : MonoBehaviour {
     // sin(60) = o/h
     // sin(60)*h = o
     // cos(60)*h = a  
-}
