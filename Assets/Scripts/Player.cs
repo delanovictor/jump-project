@@ -86,6 +86,8 @@ public class Player : MonoBehaviour {
             if(playerState != State.Jumping){
                 if(velocity.y < -.1){
                     playerState = State.Falling;
+                    animator.SetBool("isJumping", false);
+                    animator.SetBool("isFalling", true);
                 }
             }
         }
@@ -106,7 +108,8 @@ public class Player : MonoBehaviour {
        if(Input.GetKeyUp(KeyCode.Space) && controller.collisions.bellow){
             //Pula para direção do direcional
             playerState = State.Jumping;
-
+            animator.SetBool("isAiming", false);
+            animator.SetBool("isJumping", true);
             velocity.y = (Mathf.Cos(jumpAngle * Mathf.Deg2Rad) * jumpDistance)/timeToJumpPeak;
             // velocity.y = jumpVelocity;
             // jumpVelocity = jumpVelocityConst; 
@@ -118,8 +121,6 @@ public class Player : MonoBehaviour {
    
 
     void CheckJumpAngle(){
-        //Se o botão de espaço for soltado AND estiver em contato com o solo
-
          //Se space foi apertado AND o player está no chão
         if((Input.GetKey(KeyCode.Space) && controller.collisions.bellow) || toggleAim){
             //Desenha a trajetória e não se move.
@@ -129,7 +130,8 @@ public class Player : MonoBehaviour {
                 jumpAngle = jumpAngle - (70 * Time.fixedDeltaTime);
             }
             playerState = State.Aiming;
-            
+            animator.SetBool("isIdle", false);
+            animator.SetBool("isAiming",true);
             trajectory.PhysicsData(jumpGravity, standartGravity, timeToJumpPeak);
             trajectory.Draw(jumpAngle, jumpDistance);
         }else{
@@ -162,7 +164,7 @@ public class Player : MonoBehaviour {
             }
         }
         if(playerState == State.Falling){
-             velocity.x = input.x * moveSpeed;
+            velocity.x = input.x * moveSpeed;
             Vector2 deltaPos = (oldVelocity + velocity) * 0.5f * Time.fixedDeltaTime;
             controller.Move(deltaPos);
             
