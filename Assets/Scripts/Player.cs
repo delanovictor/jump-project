@@ -15,7 +15,7 @@ public class Player : MonoBehaviour {
     private float bounceParam = 1f;
     [Range(-90f,90f)]
     public float jumpAngle = 0;
-    public float jumpDistance = 5f;
+    public float jumpDistance = 6f;
     //Esses caras derivam dos de cima. 
     public float jumpGravity = 0;
     public float standartGravity = -20f;
@@ -52,7 +52,9 @@ public class Player : MonoBehaviour {
         CheckJump();
         CheckCollisions();
 
-        // print(playerState);
+        print(playerState);
+        print(jumpDistance);
+        print("Player Col Bellow :"+controller.collisions.bellow+" + Above :" +controller.collisions.above  + " + Right :"+controller.collisions.right +" + Left :"+controller.collisions.left);
     }
 
     private void FixedUpdate() {
@@ -65,41 +67,49 @@ public class Player : MonoBehaviour {
     void CheckCollisions(){
         Vector2 input = new Vector2();
         if(controller.collisions.bellow){
+            animator.SetBool("chao",true);
+            animator.SetBool("isFalling",false);
             if(!(playerState == State.Jumping)){
+            
                 input = new Vector2(Input.GetAxisRaw("Horizontal"),Input.GetAxisRaw("Vertical"));
                
                 velocity.y = -velocity.y/100;
                 gravity = standartGravity;
-                jumpDistance = 5f;
+                
                 // jumpHeight = 4;
                 if(playerState == State.Falling){
                     playerState = State.Running;
                 }
             }else{
-               
                 velocity.y = -velocity.y * bounceParam;
                 jumpDistance -= Vector3.Distance(transform.position, lastPosition);
                 lastPosition = transform.position;
+                
                 jumpAngle = 0;
+                
             }
         }else{
+            animator.SetBool("isAiming",false);
+            animator.SetBool("chao",false);
             if(playerState != State.Jumping){
-                if(velocity.y < -.1){
+                if(velocity.y < -.001){
                     playerState = State.Falling;
-                    animator.SetBool("isJumping", false);
-                    animator.SetBool("isFalling", true);
                 }
             }
         }
         if(controller.collisions.above){
+            jumpDistance += 2;
             velocity.y = -velocity.y * bounceParam;
             jumpDistance -= Vector3.Distance(transform.position, lastPosition);
             lastPosition = transform.position;
+            
         }
         if((controller.collisions.right || controller.collisions.left)){
+            jumpDistance += 2;
             velocity.x = -velocity.x * bounceParam;
             jumpDistance -= Vector3.Distance(transform.position, lastPosition);
             lastPosition = transform.position;
+            
         }
     }
 
@@ -107,9 +117,9 @@ public class Player : MonoBehaviour {
     
        if(Input.GetKeyUp(KeyCode.Space) && controller.collisions.bellow){
             //Pula para direção do direcional
+            jumpDistance = 6f;
             playerState = State.Jumping;
-            animator.SetBool("isAiming", false);
-            animator.SetBool("isJumping", true);
+
             velocity.y = (Mathf.Cos(jumpAngle * Mathf.Deg2Rad) * jumpDistance)/timeToJumpPeak;
             // velocity.y = jumpVelocity;
             // jumpVelocity = jumpVelocityConst; 
@@ -123,6 +133,7 @@ public class Player : MonoBehaviour {
     void CheckJumpAngle(){
          //Se space foi apertado AND o player está no chão
         if((Input.GetKey(KeyCode.Space) && controller.collisions.bellow) || toggleAim){
+            jumpDistance = 6f;
             //Desenha a trajetória e não se move.
             if(Input.GetKey(KeyCode.D)){
                 jumpAngle = jumpAngle + (70 * Time.fixedDeltaTime);
@@ -130,7 +141,6 @@ public class Player : MonoBehaviour {
                 jumpAngle = jumpAngle - (70 * Time.fixedDeltaTime);
             }
             playerState = State.Aiming;
-            animator.SetBool("isIdle", false);
             animator.SetBool("isAiming",true);
             trajectory.PhysicsData(jumpGravity, standartGravity, timeToJumpPeak);
             trajectory.Draw(jumpAngle, jumpDistance);
@@ -155,6 +165,7 @@ public class Player : MonoBehaviour {
             velocity.x = input.x * moveSpeed;
             Vector2 deltaPos = (oldVelocity + velocity) * 0.5f * Time.fixedDeltaTime;
             controller.Move(deltaPos);
+            animator.SetBool("Run",true);
             animator.SetFloat("isRunning", Mathf.Abs(velocity.x));
             if (input.x < 0){
                 spriteRenderer.flipX = true;
@@ -167,7 +178,13 @@ public class Player : MonoBehaviour {
             velocity.x = input.x * moveSpeed;
             Vector2 deltaPos = (oldVelocity + velocity) * 0.5f * Time.fixedDeltaTime;
             controller.Move(deltaPos);
-            
+            animator.SetBool("isFalling",true);
+            if (input.x < 0){
+                spriteRenderer.flipX = true;
+            }
+            if(input.x > 0){
+                spriteRenderer.flipX = false;
+            }
         }
 
         //Se estiver pulando
